@@ -31,7 +31,7 @@ fn main() {
     ))
     .insert_resource(WireframeConfig {
         global: false, // only draw wireframes where you add `Wireframe`
-        default_color: Color::WHITE.into(),
+        default_color: Color::WHITE,
     })
     .add_systems(Update, toggle_wireframe);
 
