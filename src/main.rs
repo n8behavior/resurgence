@@ -1,5 +1,8 @@
 use bevy::{
-    color::palettes::tailwind::{AMBER_800, GREEN_400},
+    color::palettes::{
+        css::BLUE,
+        tailwind::{AMBER_800, GREEN_400},
+    },
     pbr::wireframe::{Wireframe, WireframeConfig, WireframePlugin},
     prelude::*,
     render::{
@@ -13,37 +16,57 @@ use bevy_panorbit_camera::{PanOrbitCamera, PanOrbitCameraPlugin};
 use noise::{BasicMulti, NoiseFn, Perlin};
 
 fn main() {
-    App::new()
-        // 1) Replace DefaultPlugins’ RenderPlugin to enable POLYGON_MODE_LINE
-        .add_plugins((
-            DefaultPlugins.set(RenderPlugin {
-                render_creation: RenderCreation::Automatic(WgpuSettings {
-                    features: WgpuFeatures::POLYGON_MODE_LINE,
-                    ..default()
-                }),
+    let mut app = App::new();
+
+    // Setup for terrain to allow toggled mesh wireframe
+    app.add_plugins((
+        DefaultPlugins.set(RenderPlugin {
+            render_creation: RenderCreation::Automatic(WgpuSettings {
+                features: WgpuFeatures::POLYGON_MODE_LINE,
                 ..default()
             }),
-            // 2) Register the wireframe pipeline
-            WireframePlugin::default(),
-            PanOrbitCameraPlugin,
-        ))
-        // 3) Configure global vs. per-entity wireframe
-        .insert_resource(WireframeConfig {
-            global: false, // only draw wireframes where you add `Wireframe`
-            default_color: Color::WHITE.into(),
-        })
-        // 4) Your startup systems
-        .add_systems(Startup, (setup_camera, setup_terrain, setup_light))
-        .add_systems(Update, toggle_wireframe)
-        .run();
+            ..default()
+        }),
+        WireframePlugin::default(),
+    ))
+    .insert_resource(WireframeConfig {
+        global: false, // only draw wireframes where you add `Wireframe`
+        default_color: Color::WHITE.into(),
+    })
+    .add_systems(Update, toggle_wireframe);
+
+    app.add_plugins(PanOrbitCameraPlugin);
+    app.add_systems(
+        Startup,
+        (setup_terrain, setup_light, setup_ship, setup_camera),
+    );
+    app.add_systems(Update, (control_ship, control_ship_camera));
+    app.run();
 }
 
+fn setup_ship(
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+) {
+    let material = materials.add(StandardMaterial {
+        base_color: BLUE.into(),
+        ..default()
+    });
+    commands.spawn((
+        Mesh3d(meshes.add(Sphere::new(2f32))),
+        MeshMaterial3d(material.clone()),
+        Transform::from_xyz(0f32, 20f32, 0f32),
+        Ship,
+    ));
+}
 fn setup_camera(mut commands: Commands) {
     commands.spawn((
         Camera3d::default(),
         Transform::from_xyz(0.0, 20.0, 75.0).looking_at(Vec3::new(0.0, 1.0, 0.0), Vec3::Y),
         GlobalTransform::default(),
         PanOrbitCamera::default(),
+        ShipCamera,
     ));
 }
 
@@ -146,4 +169,37 @@ fn toggle_wireframe(
             commands.entity(terrain).remove::<Wireframe>();
         }
     }
+}
+
+#[derive(Component)]
+struct Ship;
+
+fn control_ship(inputs: Res<ButtonInput<KeyCode>>, mut ships: Query<&mut Transform, With<Ship>>) {
+    let mut direction = Vec2::new(0f32, 0f32);
+    if inputs.pressed(KeyCode::KeyW) {
+        direction.y -= 1f32;
+    }
+    if inputs.pressed(KeyCode::KeyS) {
+        direction.y += 1f32;
+    }
+    if inputs.pressed(KeyCode::KeyA) {
+        direction.x -= 1f32;
+    }
+    if inputs.pressed(KeyCode::KeyD) {
+        direction.x += 1f32;
+    }
+    for mut ship in &mut ships {
+        ship.translation.x += direction.x * 1f32;
+        ship.translation.z += direction.y * 1f32;
+    }
+}
+
+#[derive(Component)]
+struct ShipCamera;
+
+fn control_ship_camera(
+    ship: Single<&Transform, (With<Ship>, Without<ShipCamera>)>,
+    mut orbit: Single<&mut PanOrbitCamera, With<ShipCamera>>,
+) {
+    orbit.target_focus = Vec3::new(ship.translation.x, ship.translation.y, ship.translation.z)
 }
