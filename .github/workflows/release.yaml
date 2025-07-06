@@ -1,4 +1,6 @@
 name: Release
+premissions:
+  contents: write
 
 on:
   push:
