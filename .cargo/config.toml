@@ -1,0 +1,6 @@
+# .cargo/config.toml
+[target.x86_64-unknown-linux-gnu]
+linker = "clang"
+
+# Tell clang to use lld rather than its default ld
+rustflags = ["-C", "link-arg=-fuse-ld=lld"]

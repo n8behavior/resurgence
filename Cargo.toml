@@ -1,0 +1,15 @@
+[package]
+name = "resurgence"
+version = "0.0.0"
+edition = "2024"
+
+[dependencies]
+bevy = "0.16.1"
+bevy_panorbit_camera = "0.27.0"
+noise = "0.9.0"
+
+[profile.release]
+opt-level = 1 # your code compiles faster with only basic optimizations
+
+[profile.release.package.bevy]
+opt-level = 3
