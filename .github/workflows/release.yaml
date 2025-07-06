@@ -1,5 +1,5 @@
 name: Release
-premissions:
+permissions:
   contents: write
 
 on:
