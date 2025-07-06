@@ -125,7 +125,7 @@ impl Command for SpawnTerrain {
         let terrain_height = 70f32;
         let noise = BasicMulti::<Perlin>::new(900u32);
         let mesh_size = 1000f32;
-        let subdivisions = (200) as u32;
+        let subdivisions = 200u32;
 
         let mut terrain = Mesh::from(
             Plane3d::default()
