@@ -96,13 +96,15 @@ fn setup_terrain(
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
     let terrain_height = 70f32;
-    let noise = BasicMulti::<Perlin>::default();
+    let noise = BasicMulti::<Perlin>::new(900u32);
+    let mesh_size = 1000f32;
+    let subdivisions = (mesh_size / 5f32) as u32;
 
     let mut terrain = Mesh::from(
         Plane3d::default()
             .mesh()
-            .size(1000f32, 1000f32)
-            .subdivisions(200),
+            .size(mesh_size, mesh_size)
+            .subdivisions(subdivisions),
     );
     if let Some(VertexAttributeValues::Float32x3(positions)) =
         terrain.attribute_mut(Mesh::ATTRIBUTE_POSITION)
