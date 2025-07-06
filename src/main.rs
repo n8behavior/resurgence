@@ -4,6 +4,7 @@ use bevy::{
         tailwind::{AMBER_800, GREEN_400},
     },
     pbr::wireframe::{Wireframe, WireframeConfig, WireframePlugin},
+    platform::collections::HashMap,
     prelude::*,
     render::{
         RenderPlugin,
@@ -35,10 +36,11 @@ fn main() {
     })
     .add_systems(Update, toggle_wireframe);
 
+    app.insert_resource(TerrainStore(HashMap::default()));
     app.add_plugins(PanOrbitCameraPlugin);
     app.add_systems(
         Startup,
-        (setup_terrain, setup_light, setup_ship, setup_camera),
+        (setup_light, setup_ship, setup_camera, setup_terrain),
     );
     app.add_systems(Update, (control_ship, control_ship_camera));
     app.run();
@@ -90,69 +92,105 @@ fn setup_light(mut commands: Commands) {
     ));
 }
 
-fn setup_terrain(
-    mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
-) {
-    let terrain_height = 70f32;
-    let noise = BasicMulti::<Perlin>::new(900u32);
-    let mesh_size = 1000f32;
-    let subdivisions = (mesh_size / 5f32) as u32;
+fn setup_terrain(mut commands: Commands) {
+    commands.queue(SpawnTerrain(IVec2::new(-1, -1)));
+    commands.queue(SpawnTerrain(IVec2::new(-1, 0)));
+    commands.queue(SpawnTerrain(IVec2::new(-1, 1)));
+    commands.queue(SpawnTerrain(IVec2::new(0, -1)));
+    commands.queue(SpawnTerrain(IVec2::new(0, 0)));
+    commands.queue(SpawnTerrain(IVec2::new(0, 1)));
+    commands.queue(SpawnTerrain(IVec2::new(1, -1)));
+    commands.queue(SpawnTerrain(IVec2::new(1, 0)));
+    commands.queue(SpawnTerrain(IVec2::new(1, 1)));
+}
 
-    let mut terrain = Mesh::from(
-        Plane3d::default()
-            .mesh()
-            .size(mesh_size, mesh_size)
-            .subdivisions(subdivisions),
-    );
-    if let Some(VertexAttributeValues::Float32x3(positions)) =
-        terrain.attribute_mut(Mesh::ATTRIBUTE_POSITION)
-    {
-        for pos in positions.iter_mut() {
-            let val = noise.get([(pos[0] / 300f32) as f64, (pos[2] / 300f32) as f64]);
-            pos[1] = val as f32 * terrain_height; // safe: Perlin is -1 to 1
+#[derive(Resource)]
+struct TerrainStore(HashMap<IVec2, Handle<Mesh>>);
+
+struct SpawnTerrain(IVec2);
+
+impl Command for SpawnTerrain {
+    fn apply(self, world: &mut World) {
+        if world
+            .get_resource_mut::<TerrainStore>()
+            .expect("TerrainStore to be available")
+            .0
+            .get(&self.0)
+            .is_some()
+        {
+            warn!("Mesh already exists");
+            return;
         }
-        let colors: Vec<[f32; 4]> = positions
-            .iter()
-            .map(|[_, g, _]| {
-                let g = *g / terrain_height * 2f32;
-                if g > 0.8f32 {
-                    (Color::LinearRgba(LinearRgba {
-                        red: 20f32,   // bloom above 1
-                        green: 20f32, // bloom above 1
-                        blue: 20f32,  // bloom above 1
-                        alpha: 1f32,
-                    }))
-                    .to_linear()
-                    .to_f32_array()
-                } else if g > 0.3f32 {
-                    Color::from(AMBER_800).to_linear().to_f32_array()
-                } else if g < -0.8f32 {
-                    Color::BLACK.to_linear().to_f32_array()
-                } else {
-                    Color::from(GREEN_400).to_linear().to_f32_array()
-                }
-            })
-            .collect();
-        terrain.insert_attribute(Mesh::ATTRIBUTE_COLOR, colors);
-    }
-    terrain.compute_normals();
-    let mesh = meshes.add(terrain);
-    let material = materials.add(StandardMaterial {
-        base_color: bevy::color::palettes::css::SILVER.into(),
-        ..default()
-    });
 
-    commands.spawn((
-        // use the new PBR-equivalent components
-        Mesh3d(mesh),
-        MeshMaterial3d(material),
-        Transform::from_xyz(0.0, 0.0, 0.0),
-        GlobalTransform::default(),
-        // 5) turn on wireframe for this mesh
-        Terrain,
-    ));
+        let terrain_height = 70f32;
+        let noise = BasicMulti::<Perlin>::new(900u32);
+        let mesh_size = 1000f32;
+        let subdivisions = (200) as u32;
+
+        let mut terrain = Mesh::from(
+            Plane3d::default()
+                .mesh()
+                .size(mesh_size, mesh_size)
+                .subdivisions(subdivisions),
+        );
+        if let Some(VertexAttributeValues::Float32x3(positions)) =
+            terrain.attribute_mut(Mesh::ATTRIBUTE_POSITION)
+        {
+            for pos in positions.iter_mut() {
+                let val = noise.get([
+                    (pos[0] as f64 + (mesh_size as f64 * self.0.x as f64)) / 300.,
+                    (pos[2] as f64 + (mesh_size as f64 * self.0.y as f64)) / 300.,
+                ]);
+                pos[1] = val as f32 * terrain_height; // safe: Perlin is -1 to 1
+            }
+            let colors: Vec<[f32; 4]> = positions
+                .iter()
+                .map(|[_, g, _]| {
+                    let g = *g / terrain_height * 2f32;
+                    if g > 0.8f32 {
+                        (Color::LinearRgba(LinearRgba {
+                            red: 20f32,   // bloom above 1
+                            green: 20f32, // bloom above 1
+                            blue: 20f32,  // bloom above 1
+                            alpha: 1f32,
+                        }))
+                        .to_linear()
+                        .to_f32_array()
+                    } else if g > 0.3f32 {
+                        Color::from(AMBER_800).to_linear().to_f32_array()
+                    } else if g < -0.8f32 {
+                        Color::BLACK.to_linear().to_f32_array()
+                    } else {
+                        Color::from(GREEN_400).to_linear().to_f32_array()
+                    }
+                })
+                .collect();
+            terrain.insert_attribute(Mesh::ATTRIBUTE_COLOR, colors);
+        }
+        terrain.compute_normals();
+        let mesh = world
+            .get_resource_mut::<Assets<Mesh>>()
+            .expect("meshes to be available")
+            .add(terrain);
+        let material = world
+            .get_resource_mut::<Assets<StandardMaterial>>()
+            .expect("StandardMaterial db to be available")
+            .add(Color::WHITE);
+
+        world.spawn((
+            // use the new PBR-equivalent components
+            Mesh3d(mesh),
+            MeshMaterial3d(material),
+            Transform::from_xyz(
+                self.0.x as f32 * mesh_size,
+                0f32,
+                self.0.y as f32 * mesh_size,
+            ),
+            GlobalTransform::default(),
+            // 5) turn on wireframe for this mesh
+            Terrain,
+        ));
+    }
 }
 #[derive(Component)]
 struct Terrain;
