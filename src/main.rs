@@ -6,12 +6,7 @@ use bevy::{
     pbr::wireframe::{Wireframe, WireframeConfig, WireframePlugin},
     platform::collections::HashMap,
     prelude::*,
-    render::{
-        RenderPlugin,
-        mesh::VertexAttributeValues,
-        render_resource::WgpuFeatures,
-        settings::{RenderCreation, WgpuSettings},
-    },
+    render::mesh::VertexAttributeValues,
 };
 use bevy_panorbit_camera::{PanOrbitCamera, PanOrbitCameraPlugin};
 use noise::{BasicMulti, NoiseFn, Perlin};
@@ -20,21 +15,12 @@ fn main() {
     let mut app = App::new();
 
     // Setup for terrain to allow toggled mesh wireframe
-    app.add_plugins((
-        DefaultPlugins.set(RenderPlugin {
-            render_creation: RenderCreation::Automatic(WgpuSettings {
-                features: WgpuFeatures::POLYGON_MODE_LINE,
-                ..default()
-            }),
-            ..default()
-        }),
-        WireframePlugin::default(),
-    ))
-    .insert_resource(WireframeConfig {
-        global: false, // only draw wireframes where you add `Wireframe`
-        default_color: Color::WHITE,
-    })
-    .add_systems(Update, toggle_wireframe);
+    app.add_plugins((DefaultPlugins, WireframePlugin::default()))
+        .insert_resource(WireframeConfig {
+            global: false, // only draw wireframes where you add `Wireframe`
+            default_color: Color::WHITE,
+        })
+        .add_systems(Update, toggle_wireframe);
 
     app.insert_resource(TerrainStore(HashMap::default()));
     app.add_plugins(PanOrbitCameraPlugin);
