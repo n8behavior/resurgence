@@ -1,6 +1,6 @@
 use bevy::math::prelude::InfinitePlane3d;
 use bevy::prelude::*;
-use bevy::render::mesh::{Mesh3d, PlaneMeshBuilder};
+use bevy::render::mesh::Mesh3d;
 use bevy::window::PrimaryWindow;
 use bevy_panorbit_camera::{PanOrbitCamera, PanOrbitCameraPlugin};
 
@@ -10,11 +10,19 @@ struct GrowthOrigin;
 #[derive(Component)]
 struct Ground;
 
+#[derive(Resource, Default)]
+struct MouseDragState {
+    drag_start_pos: Option<Vec2>,
+    is_dragging: bool,
+    was_dragging: bool,
+}
+
 fn main() {
     App::new()
         .add_plugins((DefaultPlugins, PanOrbitCameraPlugin))
+        .init_resource::<MouseDragState>()
         .add_systems(Startup, setup)
-        .add_systems(Update, spawn_growth_origin)
+        .add_systems(Update, (track_mouse_drag, spawn_growth_origin).chain())
         .run();
 }
 
@@ -62,16 +70,48 @@ fn setup(
     ));
 }
 
+fn track_mouse_drag(
+    mouse_input: Res<ButtonInput<MouseButton>>,
+    window: Single<&Window, With<PrimaryWindow>>,
+    mut drag_state: ResMut<MouseDragState>,
+) {
+    const DRAG_THRESHOLD: f32 = 5.0; // pixels
+
+    if mouse_input.just_pressed(MouseButton::Left) {
+        if let Some(pos) = window.cursor_position() {
+            drag_state.drag_start_pos = Some(pos);
+            drag_state.is_dragging = false;
+            drag_state.was_dragging = false;
+        }
+    }
+
+    if mouse_input.pressed(MouseButton::Left) {
+        if let (Some(start_pos), Some(current_pos)) = (drag_state.drag_start_pos, window.cursor_position()) {
+            let distance = start_pos.distance(current_pos);
+            if distance > DRAG_THRESHOLD {
+                drag_state.is_dragging = true;
+                drag_state.was_dragging = true;
+            }
+        }
+    }
+
+    if mouse_input.just_released(MouseButton::Left) {
+        drag_state.drag_start_pos = None;
+        drag_state.is_dragging = false;
+    }
+}
+
 fn spawn_growth_origin(
     mouse_input: Res<ButtonInput<MouseButton>>,
     window: Single<&Window, With<PrimaryWindow>>,
     camera_q: Query<(&Camera, &GlobalTransform), With<PanOrbitCamera>>,
     ground_q: Query<&GlobalTransform, With<Ground>>,
+    drag_state: Res<MouseDragState>,
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
-    if !mouse_input.just_pressed(MouseButton::Left) {
+    if !mouse_input.just_released(MouseButton::Left) || drag_state.was_dragging {
         return;
     }
 
