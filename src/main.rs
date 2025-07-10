@@ -20,20 +20,20 @@ const DIRECTIONAL_LIGHT_POS: (f32, f32, f32) = (0f32, 10f32, 0f32);
 const GROWTH_UPDATE_FREQUENCY: f32 = 0.2f32; // 5Hz
 
 // Game balance constants
-const DEFAULT_GROWTH_RATE: f32 = 0.05f32;           // How fast spots mature (0-1 per second)
-const DEFAULT_RADIUS_EXPANSION_RATE: f32 = 0.2f32;  // How fast growth spreads (units per second)
-const DEFAULT_MAX_GROWTH_DISTANCE: f32 = 20f32;     // Distance for alpha fade effect
-const DEFAULT_MIN_ALPHA: f32 = 0.2f32;              // Minimum transparency for distant growth
-const DEFAULT_INITIAL_GROWTH_AGE: f32 = 0f32;       // Starting age for new growth spots
-const DEFAULT_INITIAL_RADIUS: f32 = 0f32;           // Starting radius for new growth origins
-const DEFAULT_MAX_GROWTH_AGE: f32 = 1f32;           // Maximum age (fully mature)
+const DEFAULT_GROWTH_RATE: f32 = 0.05f32; // How fast spots mature (0-1 per second)
+const DEFAULT_RADIUS_EXPANSION_RATE: f32 = 0.2f32; // How fast growth spreads (units per second)
+const DEFAULT_MAX_GROWTH_DISTANCE: f32 = 20f32; // Distance for alpha fade effect
+const DEFAULT_MIN_ALPHA: f32 = 0.2f32; // Minimum transparency for distant growth
+const DEFAULT_INITIAL_GROWTH_AGE: f32 = 0f32; // Starting age for new growth spots
+const DEFAULT_INITIAL_RADIUS: f32 = 0f32; // Starting radius for new growth origins
+const DEFAULT_MAX_GROWTH_AGE: f32 = 1f32; // Maximum age (fully mature)
 
 // Visual constants
 const GROWTH_BASE_COLOR: (f32, f32, f32) = (1f32, 0f32, 0f32); // Red color for growth spots
 
 // Visual aging constants (red to black interpolation)
-const GROWTH_COLOR_RED_MULTIPLIER: f32 = 0.5f32;    // How much red fades as growth ages
-const GROWTH_VISUAL_AGE_THRESHOLD: f32 = 1f32;      // Age when visual updates stop
+const GROWTH_COLOR_RED_MULTIPLIER: f32 = 0.5f32; // How much red fades as growth ages
+const GROWTH_VISUAL_AGE_THRESHOLD: f32 = 1f32; // Age when visual updates stop
 
 #[derive(Component)]
 struct GrowthOrigin;
@@ -123,7 +123,12 @@ fn spawn_growth_at_position(
     );
     let patch_handle = meshes.add(mesh);
     let patch_mat = materials.add(StandardMaterial {
-        base_color: Color::srgba(GROWTH_BASE_COLOR.0, GROWTH_BASE_COLOR.1, GROWTH_BASE_COLOR.2, alpha),
+        base_color: Color::srgba(
+            GROWTH_BASE_COLOR.0,
+            GROWTH_BASE_COLOR.1,
+            GROWTH_BASE_COLOR.2,
+            alpha,
+        ),
         alpha_mode: bevy::prelude::AlphaMode::Blend,
         ..default()
     });
@@ -247,7 +252,9 @@ fn spawn_growth_origin(
         let final_position = grid_aligned_point + Vec3::Y * TERRAIN_HEIGHT_OFFSET;
 
         // Register new growth origin
-        growth_radius.origins.push((final_position, DEFAULT_INITIAL_RADIUS));
+        growth_radius
+            .origins
+            .push((final_position, DEFAULT_INITIAL_RADIUS));
 
         spawn_growth_at_position(
             final_position,
