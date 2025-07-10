@@ -12,20 +12,37 @@ struct Ground;
 
 #[derive(Component)]
 struct Growth {
-    age: f32,         // 0.0 to 1.0 (fully mature)
-    growth_rate: f32, // How fast it ages per second
-    can_spread: bool, // Has it spread yet?
+    age: f32,                    // 0.0 to 1.0 (fully mature)
+    growth_rate: f32,            // How fast it ages per second
+    can_spread: bool,            // Has it spread yet?
+    distance_from_origin: f32,   // Distance from nearest origin point
+    origin_position: Vec3,       // Position of the origin that spawned this growth
 }
 
 #[derive(Resource)]
 struct GrowthSpreadTimer(Timer);
 
+#[derive(Resource)]
+struct GrowthRadius {
+    origins: Vec<(Vec3, f32)>, // (position, current_radius)
+    expansion_rate: f32,       // How fast radius grows per second
+}
+
 fn mouse_just_clicked(mouse: Res<ButtonInput<MouseButton>>) -> bool {
     mouse.just_pressed(MouseButton::Left)
 }
 
+fn snap_to_grid(position: Vec3, grid_size: f32) -> Vec3 {
+    Vec3::new(
+        (position.x / grid_size).round() * grid_size,
+        position.y, // Keep Y unchanged for terrain height
+        (position.z / grid_size).round() * grid_size,
+    )
+}
+
 fn spawn_growth_at_position(
     position: Vec3,
+    origin_pos: Vec3,
     commands: &mut Commands,
     meshes: &mut ResMut<Assets<Mesh>>,
     materials: &mut ResMut<Assets<StandardMaterial>>,
@@ -41,10 +58,17 @@ fn spawn_growth_at_position(
         }
     }
 
+    let distance_from_origin = position.distance(origin_pos);
+    
+    // Calculate alpha based on distance (closer = more opaque, farther = more transparent)
+    let max_distance = 20f32; // Max visible growth distance
+    let alpha = (1f32 - (distance_from_origin / max_distance).min(1f32)).max(0.2f32);
+    
     let mesh = Mesh::from(Plane3d::default().mesh().size(2f32, 2f32).subdivisions(0));
     let patch_handle = meshes.add(mesh);
     let patch_mat = materials.add(StandardMaterial {
-        base_color: Color::srgb(1f32, 0f32, 0f32),
+        base_color: Color::srgba(1f32, 0f32, 0f32, alpha),
+        alpha_mode: bevy::prelude::AlphaMode::Blend,
         ..default()
     });
 
@@ -58,6 +82,8 @@ fn spawn_growth_at_position(
             age: 0f32,
             growth_rate: 0.2f32,
             can_spread: true,
+            distance_from_origin,
+            origin_position: origin_pos,
         },
     ));
 
@@ -71,6 +97,10 @@ fn main() {
             0.5f32,
             TimerMode::Repeating,
         )))
+        .insert_resource(GrowthRadius {
+            origins: Vec::new(),
+            expansion_rate: 2f32, // Radius grows 2 units per second
+        })
         .add_systems(Startup, setup)
         .add_systems(
             Update,
@@ -78,7 +108,8 @@ fn main() {
                 spawn_growth_origin.run_if(mouse_just_clicked),
                 age_growth,
                 update_growth_visuals,
-                spread_growth,
+                expand_growth_radius,
+                spread_growth_radial,
             ),
         )
         .run();
@@ -130,6 +161,7 @@ fn spawn_growth_origin(
     camera: Single<(&Camera, &GlobalTransform)>,
     ground_tf: Single<&GlobalTransform, With<Ground>>,
     existing_growth: Query<&Transform, With<Growth>>,
+    mut growth_radius: ResMut<GrowthRadius>,
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
@@ -147,8 +179,15 @@ fn spawn_growth_origin(
         ray.intersect_plane(ground_tf.translation(), InfinitePlane3d::new(Vec3::Y))
     {
         let world_point = ray.origin + ray.direction * distance;
+        let grid_aligned_point = snap_to_grid(world_point, 2f32);
+        let final_position = grid_aligned_point + Vec3::Y * 0.01f32;
+        
+        // Register new growth origin
+        growth_radius.origins.push((final_position, 0f32));
+        
         spawn_growth_at_position(
-            world_point + Vec3::Y * 0.01f32,
+            final_position,
+            final_position, // This is the origin for user-clicked spots
             &mut commands,
             &mut meshes,
             &mut materials,
@@ -181,48 +220,70 @@ fn update_growth_visuals(
     }
 }
 
-fn spread_growth(
+fn expand_growth_radius(time: Res<Time>, mut growth_radius: ResMut<GrowthRadius>) {
+    let expansion_amount = growth_radius.expansion_rate * time.delta_secs();
+    for (_pos, radius) in growth_radius.origins.iter_mut() {
+        *radius += expansion_amount;
+    }
+}
+
+fn spread_growth_radial(
     time: Res<Time>,
     mut timer: ResMut<GrowthSpreadTimer>,
-    mut growth_q: Query<(&Transform, &mut Growth)>,
+    growth_radius: Res<GrowthRadius>,
     existing_growth: Query<&Transform, With<Growth>>,
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
     timer.0.tick(time.delta());
-
+    
     if !timer.0.just_finished() {
         return;
     }
 
-    let spread_distance = 2f32; // Distance between growth spots (matches spot size)
-    let directions = [
-        Vec3::new(spread_distance, 0f32, 0f32),  // East
-        Vec3::new(-spread_distance, 0f32, 0f32), // West
-        Vec3::new(0f32, 0f32, spread_distance),  // North
-        Vec3::new(0f32, 0f32, -spread_distance), // South
-    ];
+    let grid_size = 2f32;
+    let mut spawn_data = Vec::new();
 
-    let mut spawn_positions = Vec::new();
-
-    // Find mature growth that can spread
-    for (transform, mut growth) in growth_q.iter_mut() {
-        if growth.age >= 1f32 && growth.can_spread {
-            growth.can_spread = false; // Mark as having spread
-
-            // Calculate spawn positions
-            for &dir in &directions {
-                let new_pos = transform.translation + dir;
-                spawn_positions.push(new_pos);
+    // For each origin, find grid positions within its current radius
+    for &(origin_pos, radius) in &growth_radius.origins {
+        let max_grid_distance = (radius / grid_size).floor() as i32;
+        
+        // Check all grid positions within radius
+        for x in -max_grid_distance..=max_grid_distance {
+            for z in -max_grid_distance..=max_grid_distance {
+                let grid_pos = Vec3::new(
+                    origin_pos.x + (x as f32) * grid_size,
+                    origin_pos.y,
+                    origin_pos.z + (z as f32) * grid_size,
+                );
+                
+                let distance_from_origin = grid_pos.distance(origin_pos);
+                
+                // Only spawn if within radius and not too close to origin
+                if distance_from_origin <= radius && distance_from_origin >= grid_size {
+                    // Check if position is already occupied
+                    let mut occupied = false;
+                    for existing_transform in existing_growth.iter() {
+                        if existing_transform.translation.distance(grid_pos) < 1f32 {
+                            occupied = true;
+                            break;
+                        }
+                    }
+                    
+                    if !occupied {
+                        spawn_data.push((grid_pos, origin_pos));
+                    }
+                }
             }
         }
     }
 
     // Spawn new growth at calculated positions
-    for pos in spawn_positions {
+    for (pos, origin_pos) in spawn_data {
         spawn_growth_at_position(
             pos,
+            origin_pos,
             &mut commands,
             &mut meshes,
             &mut materials,
@@ -230,3 +291,4 @@ fn spread_growth(
         );
     }
 }
+
