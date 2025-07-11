@@ -34,7 +34,6 @@ const DEFAULT_MAX_GROWTH_AGE: f32 = 1f32; // Maximum age (fully mature)
 const GROWTH_BASE_COLOR: (f32, f32, f32) = (1f32, 0f32, 0f32); // Red color for growth spots
 
 // Visual aging constants (red to black interpolation)
-const GROWTH_COLOR_RED_MULTIPLIER: f32 = 0.5f32; // How much red fades as growth ages
 const GROWTH_VISUAL_AGE_THRESHOLD: f32 = 1f32; // Age when visual updates stop
 
 #[derive(Component)]
@@ -86,11 +85,19 @@ pub struct GrowthRadius {
 pub struct GrowthOverlayExperiment;
 
 impl Experiment for GrowthOverlayExperiment {
-    fn name() -> &'static str {
+    fn name(&self) -> &'static str {
         "Growth-Type Overlay Demo"
     }
 
-    fn add_systems(app: &mut App) -> &mut App {
+    fn icon(&self) -> &'static str {
+        "🌱"
+    }
+
+    fn app_state(&self) -> AppState {
+        AppState::GrowthOverlay
+    }
+
+    fn add_systems<'a>(&self, app: &'a mut App) -> &'a mut App {
         app.insert_resource(GrowthSpreadTimer(Timer::from_seconds(
             GROWTH_UPDATE_FREQUENCY,
             TimerMode::Repeating,
@@ -320,11 +327,25 @@ fn update_growth_visuals(
     for (growth, mesh_mat) in growth_q.iter_mut() {
         if let Some(material) = materials.get_mut(&mesh_mat.0) {
             // Interpolate from red (new) to black (mature)
-            // Red -> Dark Red -> Brown -> Black
-            let age_normalized = growth.age / GROWTH_VISUAL_AGE_THRESHOLD;
-            let r = GROWTH_BASE_COLOR.0 - age_normalized * GROWTH_COLOR_RED_MULTIPLIER;
-            let g = GROWTH_BASE_COLOR.1;
-            let b = GROWTH_BASE_COLOR.2;
+            // Red -> Brown -> Dark Brown -> Black
+            let age_normalized = (growth.age / GROWTH_VISUAL_AGE_THRESHOLD).clamp(0.0, 1.0);
+            
+            let (r, g, b) = if age_normalized < 0.5 {
+                // First half: Red (1,0,0) -> Brown (0.6,0.3,0.1)
+                let t = age_normalized * 2.0; // 0.0 to 1.0
+                let r = 1.0 - t * 0.4; // 1.0 -> 0.6
+                let g = t * 0.3;       // 0.0 -> 0.3
+                let b = t * 0.1;       // 0.0 -> 0.1
+                (r, g, b)
+            } else {
+                // Second half: Brown (0.6,0.3,0.1) -> Black (0,0,0)
+                let t = (age_normalized - 0.5) * 2.0; // 0.0 to 1.0
+                let r = 0.6 - t * 0.6; // 0.6 -> 0.0
+                let g = 0.3 - t * 0.3; // 0.3 -> 0.0
+                let b = 0.1 - t * 0.1; // 0.1 -> 0.0
+                (r, g, b)
+            };
+            
             material.base_color = Color::srgb(r, g, b);
         }
     }
