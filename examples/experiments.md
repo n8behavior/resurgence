@@ -25,11 +25,12 @@ Self-contained “mini-projects” to quickly validate core gameplay ideas and m
 
 ---
 
-- [ ] Growth-Type Overlay Demo
+- [x] Growth-Type Overlay Demo ✅ `growth_overlay.rs`
 
 * **What:** Take a sample terrain image and procedurally paint “growth patches” in 3–5 colors (denoting species), with blending at edges.
 * **Why:** Validate your color palette, saturation encoding, and legend/UI so players can intuitively read resource maps.
 * **Metric:** Accuracy in “what type is this area?” quiz with play-testers.
+* **Implementation:** Grid-based radial growth system with visual aging and alpha blending. Run with `cargo run --example growth_overlay`
 
 ---
 
