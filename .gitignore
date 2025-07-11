@@ -4,3 +4,6 @@
 wasm/*.wasm
 wasm/*.js
 wasm/*.d.ts
+
+# Exception: Keep manually created files
+!wasm/restart-audio-context.js
