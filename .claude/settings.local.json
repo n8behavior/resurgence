@@ -4,7 +4,12 @@
       "WebFetch(domain:github.com)",
       "Bash(cargo clippy:*)",
       "Bash(cargo fmt:*)",
-      "Bash(cargo run:*)"
+      "Bash(cargo run:*)",
+      "Bash(rg:*)",
+      "WebFetch(domain:localhost)",
+      "WebFetch(domain:127.0.0.1)",
+      "Bash(curl:*)",
+      "Bash(rm:*)"
     ],
     "deny": []
   }

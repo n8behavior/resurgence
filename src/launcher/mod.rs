@@ -155,8 +155,8 @@ fn setup_launcher(mut commands: Commands) {
 }
 
 fn handle_button_interactions(
-    growth_button_query: Query<&Interaction, (Changed<Interaction>, With<GrowthOverlayButton>)>,
-    terrain_button_query: Query<&Interaction, (Changed<Interaction>, With<TerrainProcGenButton>)>,
+    growth_button_query: Query<&Interaction, With<GrowthOverlayButton>>,
+    terrain_button_query: Query<&Interaction, With<TerrainProcGenButton>>,
     mut next_state: ResMut<NextState<AppState>>,
 ) {
     for interaction in growth_button_query.iter() {
@@ -175,15 +175,11 @@ fn handle_button_interactions(
 fn update_button_colors(
     mut growth_button_query: Query<
         (&Interaction, &mut BackgroundColor),
-        (Changed<Interaction>, With<GrowthOverlayButton>),
+        With<GrowthOverlayButton>,
     >,
     mut terrain_button_query: Query<
         (&Interaction, &mut BackgroundColor),
-        (
-            Changed<Interaction>,
-            With<TerrainProcGenButton>,
-            Without<GrowthOverlayButton>,
-        ),
+        (With<TerrainProcGenButton>, Without<GrowthOverlayButton>),
     >,
 ) {
     for (interaction, mut background_color) in growth_button_query.iter_mut() {

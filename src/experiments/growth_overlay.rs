@@ -321,7 +321,7 @@ fn age_growth(time: Res<Time>, config: Res<GameConfig>, mut growth_q: Query<&mut
 }
 
 fn update_growth_visuals(
-    mut growth_q: Query<(&Growth, &mut MeshMaterial3d<StandardMaterial>), Changed<Growth>>,
+    mut growth_q: Query<(&Growth, &mut MeshMaterial3d<StandardMaterial>), With<Growth>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
     for (growth, mesh_mat) in growth_q.iter_mut() {
