@@ -12,7 +12,10 @@
       "Bash(rm:*)",
       "Bash(rustup target:*)",
       "Bash(find:*)",
-      "Bash(cp:*)"
+      "Bash(cp:*)",
+      "Bash(gh workflow view:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ],
     "deny": []
   }
