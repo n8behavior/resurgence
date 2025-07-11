@@ -172,11 +172,9 @@ fn handle_button_interactions(
     }
 }
 
+#[allow(clippy::type_complexity)]
 fn update_button_colors(
-    mut growth_button_query: Query<
-        (&Interaction, &mut BackgroundColor),
-        With<GrowthOverlayButton>,
-    >,
+    mut growth_button_query: Query<(&Interaction, &mut BackgroundColor), With<GrowthOverlayButton>>,
     mut terrain_button_query: Query<
         (&Interaction, &mut BackgroundColor),
         (With<TerrainProcGenButton>, Without<GrowthOverlayButton>),

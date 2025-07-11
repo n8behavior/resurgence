@@ -8,12 +8,6 @@ pub trait Experiment {
     /// Returns the name of the experiment
     fn name() -> &'static str;
 
-    /// Returns the description of the experiment
-    fn description() -> &'static str;
-
-    /// Returns whether the experiment is implemented
-    fn is_implemented() -> bool;
-
     /// Adds the experiment's systems to the app
     fn add_systems(app: &mut App) -> &mut App;
 }

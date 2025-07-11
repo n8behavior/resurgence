@@ -39,14 +39,6 @@ impl Experiment for TerrainProcGenExperiment {
         "Procedural Terrain Generation"
     }
 
-    fn description() -> &'static str {
-        "Generate terrain using Perlin noise with height-based coloring"
-    }
-
-    fn is_implemented() -> bool {
-        true
-    }
-
     fn add_systems(app: &mut App) -> &mut App {
         app.add_plugins(WireframePlugin::default())
             .insert_resource(WireframeConfig {
@@ -302,6 +294,7 @@ fn control_ship_camera(
     orbit.target_focus = Vec3::new(ship.translation.x, ship.translation.y, ship.translation.z)
 }
 
+#[allow(clippy::type_complexity)]
 fn cleanup_terrain_experiment(
     mut commands: Commands,
     entities: Query<

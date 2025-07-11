@@ -90,14 +90,6 @@ impl Experiment for GrowthOverlayExperiment {
         "Growth-Type Overlay Demo"
     }
 
-    fn description() -> &'static str {
-        "Grid-based radial growth system with visual aging and alpha blending"
-    }
-
-    fn is_implemented() -> bool {
-        true
-    }
-
     fn add_systems(app: &mut App) -> &mut App {
         app.insert_resource(GrowthSpreadTimer(Timer::from_seconds(
             GROWTH_UPDATE_FREQUENCY,
@@ -250,6 +242,7 @@ fn setup_growth_experiment(
     ));
 }
 
+#[allow(clippy::type_complexity)]
 fn cleanup_growth_experiment(
     mut commands: Commands,
     entities: Query<

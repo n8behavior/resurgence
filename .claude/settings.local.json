@@ -9,7 +9,9 @@
       "WebFetch(domain:localhost)",
       "WebFetch(domain:127.0.0.1)",
       "Bash(curl:*)",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "Bash(rustup target:*)",
+      "Bash(find:*)"
     ],
     "deny": []
   }
