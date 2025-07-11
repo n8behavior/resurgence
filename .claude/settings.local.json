@@ -11,7 +11,8 @@
       "Bash(curl:*)",
       "Bash(rm:*)",
       "Bash(rustup target:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(cp:*)"
     ],
     "deny": []
   }

@@ -5,27 +5,67 @@ mechanics. Each should be small enough to tackle in a day or two, yet focused
 enough to teach something concrete about your game's feel, UX, or tech
 feasibility.
 
+## How to Test
+
+1. **Launch the game**: Run `cargo run` to start the experiment launcher
+2. **Select an experiment**: Click on any experiment button in the launcher UI
+3. **Test the mechanics**: Follow the specific instructions for each experiment below
+4. **Return to launcher**: Press `ESC` at any time to return to the main menu
+5. **Test WASM build**: Use
+   `cargo build --release --target wasm32-unknown-unknown &&
+   wasm-bindgen --out-dir wasm --target web
+   target/wasm32-unknown-unknown/release/resurgence.wasm`
+   then serve the `wasm/` directory
+
 ## Approach
 
-1. Spin them up in isolation as examples in this project.
-2. Gather quick metrics or feedback.
+1. Implement experiments in the integrated launcher system
+2. Gather quick metrics or feedback from testers
 3. Iterate or pivot based on what we learn
-4. Layer these mechanics together in a composite prototype.
+4. Layer these mechanics together in a composite prototype
 
 ---
 
-## Procedural Terrain Slice
+## Implemented Experiments
 
-- **What:** Generate a small grid of height-map terrain (perlin or
-  diamond-square) and render it in 2D top-down or 3D.
-- **Why:** Test how ridge-lines, plateaus, and canyons look at playable scale.
-  Tune noise parameters until you get strategic chokepoints.
-- **Metric:** Percentage of maps with clear "defensible" features versus too
-  flat or too chaotic.
+### Procedural Terrain Generation ✅
+
+- **Access:** Launch game → Click "Procedural Terrain Generation"
+- **Controls:**
+  - WASD - Move ship
+  - Mouse - Orbit camera around ship
+  - Space - Toggle wireframe view
+  - ESC - Return to launcher
+- **What to test:** How ridge-lines, plateaus, and canyons look at playable
+  scale. Do the noise parameters create strategic chokepoints?
+- **Focus areas:** Visual clarity of terrain features, performance with 3x3
+  chunk system, camera smoothness
+- **Known limitations:** Fixed 3x3 grid, no infinite terrain yet
 
 ---
 
-## Strike-Radius Targeting UI
+### Growth-Type Overlay Demo ✅
+
+- **Access:** Launch game → Click "Growth-Type Overlay Demo"
+- **Controls:**
+  - Left-click - Place growth origin on terrain
+  - ESC - Return to launcher
+- **What to test:** Visual clarity of growth spread patterns, color palette
+  effectiveness, performance with multiple growth origins
+- **Focus areas:**
+  - Is the growth spread visually clear and intuitive?
+  - Does the grid alignment feel natural or too rigid?
+  - Is the growth rate too fast/slow?
+  - How does the color transition (red to black) communicate age?
+  - Can you easily distinguish overlapping growth areas?
+- **Known limitations:** No growth removal, infinite spread, fixed camera
+  view
+
+---
+
+## Future Experiments
+
+### Strike-Radius Targeting UI
 
 - **What:** Load a static map texture, overlay an adjustable circular
   crosshair. Allow mouse-drag to resize radius and preview impact area.
@@ -34,21 +74,7 @@ feasibility.
 - **Metric:** Time to set a target (seconds) and number of accidental
   mis-sized strikes in user tests.
 
----
-
-## Growth-Type Overlay Demo ✅ `growth_overlay.rs`
-
-- **What:** Take a sample terrain image and procedurally paint "growth
-  patches" in 3–5 colors (denoting species), with blending at edges.
-- **Why:** Validate your color palette, saturation encoding, and legend/UI so
-  players can intuitively read resource maps.
-- **Metric:** Accuracy in "what type is this area?" quiz with play-testers.
-- **Implementation:** Grid-based radial growth system with visual aging and
-  alpha blending. Run with `cargo run --example growth_overlay`
-
----
-
-## Simple Skirmish Encounter
+### Simple Skirmish Encounter
 
 - **What:** Place a player avatar and a handful of AI agents on a flat arena.
   Implement basic pathfinding (A\*), line-of-sight checks, and attack logic.
