@@ -7,15 +7,25 @@ feasibility.
 
 ## How to Test
 
-1. **Launch the game**: Run `cargo run` to start the experiment launcher
+### Latest Release (Recommended for general testing)
+
+- **Visit**: <https://n8behavior.itch.io/resurgence>
+- **Browser**: Works in any modern browser (Chrome, Firefox, Safari, Edge)
+- **Note**: This is the stable release version
+
+### Latest Code (For developers/bleeding edge)
+
+1. **Launch locally**: Run `cargo run` to start the experiment launcher
 2. **Select an experiment**: Click on any experiment button in the launcher UI
 3. **Test the mechanics**: Follow the specific instructions for each experiment below
 4. **Return to launcher**: Press `ESC` at any time to return to the main menu
-5. **Test WASM build**: Use
-   `cargo build --release --target wasm32-unknown-unknown &&
-   wasm-bindgen --out-dir wasm --target web
-   target/wasm32-unknown-unknown/release/resurgence.wasm`
-   then serve the `wasm/` directory
+5. **Test local WASM build**: Use
+
+   ```bash
+   cargo build --release --target wasm32-unknown-unknown
+   wasm-bindgen --out-dir wasm --target web target/wasm32-unknown-unknown/release/resurgence.wasm
+   simple-http-server wasm/
+   ```
 
 ## Approach
 
