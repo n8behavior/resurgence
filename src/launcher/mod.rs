@@ -1,9 +1,6 @@
 use bevy::prelude::*;
 
-use crate::experiments::{
-    AppState, Experiment, growth_overlay::GrowthOverlayExperiment,
-    terrain_proc_gen::TerrainProcGenExperiment,
-};
+use crate::experiments::{AppState, all_experiments};
 
 // UI Colors
 const BUTTON_COLOR: Color = Color::srgb(0.2, 0.2, 0.2);
@@ -16,10 +13,9 @@ const TITLE_COLOR: Color = Color::srgb(0.8, 0.9, 1.0);
 pub struct LauncherUI;
 
 #[derive(Component)]
-pub struct GrowthOverlayButton;
-
-#[derive(Component)]
-pub struct TerrainProcGenButton;
+pub struct ExperimentButton {
+    pub target_state: AppState,
+}
 
 pub struct LauncherPlugin;
 
@@ -83,59 +79,36 @@ fn setup_launcher(mut commands: Commands) {
                 },
             ));
 
-            // Growth Overlay Button
-            parent
-                .spawn((
-                    Button,
-                    Node {
-                        width: Val::Px(600.0),
-                        height: Val::Px(100.0),
-                        justify_content: JustifyContent::Center,
-                        align_items: AlignItems::Center,
-                        margin: UiRect::bottom(Val::Px(20.0)),
-                        ..default()
-                    },
-                    BackgroundColor(BUTTON_COLOR),
-                    BorderRadius::all(Val::Px(10.0)),
-                    GrowthOverlayButton,
-                ))
-                .with_children(|parent| {
-                    parent.spawn((
-                        Text::new(format!("✅ {}", GrowthOverlayExperiment::name())),
-                        TextFont {
-                            font_size: 24.0,
+            // Generate buttons for all experiments
+            for experiment in all_experiments() {
+                parent
+                    .spawn((
+                        Button,
+                        Node {
+                            width: Val::Px(600.0),
+                            height: Val::Px(100.0),
+                            justify_content: JustifyContent::Center,
+                            align_items: AlignItems::Center,
+                            margin: UiRect::bottom(Val::Px(20.0)),
                             ..default()
                         },
-                        TextColor(TEXT_COLOR),
-                    ));
-                });
-
-            // Terrain Proc Gen Button
-            parent
-                .spawn((
-                    Button,
-                    Node {
-                        width: Val::Px(600.0),
-                        height: Val::Px(100.0),
-                        justify_content: JustifyContent::Center,
-                        align_items: AlignItems::Center,
-                        margin: UiRect::bottom(Val::Px(20.0)),
-                        ..default()
-                    },
-                    BackgroundColor(BUTTON_COLOR),
-                    BorderRadius::all(Val::Px(10.0)),
-                    TerrainProcGenButton,
-                ))
-                .with_children(|parent| {
-                    parent.spawn((
-                        Text::new(format!("📋 {}", TerrainProcGenExperiment::name())),
-                        TextFont {
-                            font_size: 24.0,
-                            ..default()
+                        BackgroundColor(BUTTON_COLOR),
+                        BorderRadius::all(Val::Px(10.0)),
+                        ExperimentButton {
+                            target_state: experiment.app_state(),
                         },
-                        TextColor(TEXT_COLOR),
-                    ));
-                });
+                    ))
+                    .with_children(|parent| {
+                        parent.spawn((
+                            Text::new(format!("{} {}", experiment.icon(), experiment.name())),
+                            TextFont {
+                                font_size: 24.0,
+                                ..default()
+                            },
+                            TextColor(TEXT_COLOR),
+                        ));
+                    });
+            }
 
             // Instructions
             parent.spawn((
@@ -155,40 +128,20 @@ fn setup_launcher(mut commands: Commands) {
 }
 
 fn handle_button_interactions(
-    growth_button_query: Query<&Interaction, With<GrowthOverlayButton>>,
-    terrain_button_query: Query<&Interaction, With<TerrainProcGenButton>>,
+    button_query: Query<(&Interaction, &ExperimentButton)>,
     mut next_state: ResMut<NextState<AppState>>,
 ) {
-    for interaction in growth_button_query.iter() {
+    for (interaction, button) in button_query.iter() {
         if *interaction == Interaction::Pressed {
-            next_state.set(AppState::GrowthOverlay);
-        }
-    }
-
-    for interaction in terrain_button_query.iter() {
-        if *interaction == Interaction::Pressed {
-            next_state.set(AppState::TerrainProcGen);
+            next_state.set(button.target_state);
         }
     }
 }
 
-#[allow(clippy::type_complexity)]
 fn update_button_colors(
-    mut growth_button_query: Query<(&Interaction, &mut BackgroundColor), With<GrowthOverlayButton>>,
-    mut terrain_button_query: Query<
-        (&Interaction, &mut BackgroundColor),
-        (With<TerrainProcGenButton>, Without<GrowthOverlayButton>),
-    >,
+    mut button_query: Query<(&Interaction, &mut BackgroundColor), With<ExperimentButton>>,
 ) {
-    for (interaction, mut background_color) in growth_button_query.iter_mut() {
-        *background_color = match interaction {
-            Interaction::Pressed => BUTTON_PRESSED_COLOR.into(),
-            Interaction::Hovered => BUTTON_HOVER_COLOR.into(),
-            Interaction::None => BUTTON_COLOR.into(),
-        };
-    }
-
-    for (interaction, mut background_color) in terrain_button_query.iter_mut() {
+    for (interaction, mut background_color) in button_query.iter_mut() {
         *background_color = match interaction {
             Interaction::Pressed => BUTTON_PRESSED_COLOR.into(),
             Interaction::Hovered => BUTTON_HOVER_COLOR.into(),

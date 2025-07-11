@@ -35,11 +35,19 @@ pub struct TerrainStore(pub HashMap<IVec2, Handle<Mesh>>);
 pub struct TerrainProcGenExperiment;
 
 impl Experiment for TerrainProcGenExperiment {
-    fn name() -> &'static str {
+    fn name(&self) -> &'static str {
         "Procedural Terrain Generation"
     }
 
-    fn add_systems(app: &mut App) -> &mut App {
+    fn icon(&self) -> &'static str {
+        "⛰️"
+    }
+
+    fn app_state(&self) -> AppState {
+        AppState::TerrainProcGen
+    }
+
+    fn add_systems<'a>(&self, app: &'a mut App) -> &'a mut App {
         app.add_plugins(WireframePlugin::default())
             .insert_resource(WireframeConfig {
                 global: false, // only draw wireframes where you add `Wireframe`
