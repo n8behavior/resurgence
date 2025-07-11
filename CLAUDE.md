@@ -32,6 +32,15 @@ After every code change, run these commands in order:
 
 **Important**: Never run the game without first passing clippy and fmt checks.
 
+#### After Pushing Code
+
+After `git push`, always check CI/CD status:
+
+1. `gh workflow view CI` - Monitor CI build and test status
+2. `gh workflow view Release` - Check release pipeline status
+
+**Important**: Ensure all workflows pass before considering the push complete.
+
 #### For Markdown Changes
 
 After editing any markdown file, run:
@@ -50,6 +59,10 @@ cargo clippy && cargo fmt && cargo run
 # Required workflow for markdown changes
 markdownlint-cli2 *.md **/*.md
 
+# After git push - monitor CI/CD
+gh workflow view CI        # Check CI status
+gh workflow view Release   # Check release status
+
 # Individual commands
 cargo clippy      # Run linter - fix all warnings
 cargo fmt         # Format code
@@ -61,11 +74,17 @@ cargo run         # Run the main game
 markdownlint-cli2 *.md **/*.md      # Lint all markdown files
 markdownlint-cli2 specific.md      # Lint specific file
 
+# GitHub CLI workflow management
+gh workflow list           # List all workflows
+gh workflow run CI         # Manually trigger CI
+gh workflow run Release    # Manually trigger release
+
 # Run with optimizations (better performance)
 cargo run --release
 
-# Run specific examples
-cargo run --example terrain_proc_gen
+# WASM build commands
+cargo build --release --target wasm32-unknown-unknown
+wasm-bindgen --out-dir wasm --target web target/wasm32-unknown-unknown/release/resurgence.wasm
 ```
 
 ## Architecture Overview
@@ -73,9 +92,8 @@ cargo run --example terrain_proc_gen
 ### Core Structure
 
 - **ECS Architecture**: Uses Bevy's Entity Component System pattern
-- **Main Entry**: `src/main.rs` - Simple terrain with click-to-spawn growth
-  mechanics
-- **Examples**: `examples/` contains isolated experiments for testing mechanics
+- **Main Entry**: `src/main.rs` - Launcher system for accessing experiments
+- **Experiments**: `src/experiments/` contains integrated experiment modules
 
 ### Key Systems
 
@@ -110,5 +128,6 @@ cargo run --example terrain_proc_gen
   for faster iteration
 - **Linker**: Configured to use clang with LLD for faster builds on Linux
 - **WebAssembly**: Project has WASM support (see `wasm/` directory)
-- **Experiments**: Follow experiment-driven development - test mechanics in
-  isolation before integration
+- **Experiments**: Follow experiment-driven development using launcher system
+- **GitHub Organization**: Repository is under `n8behavior` org
+- **CI/CD**: Always monitor workflow status after pushing code
