@@ -75,10 +75,16 @@ impl Default for GameConfig {
     }
 }
 
+#[derive(Clone)]
+pub struct GrowthOriginData {
+    pub position: Vec3,
+    pub current_radius: f32,
+    pub is_expansion_complete: bool,
+}
+
 #[derive(Resource)]
 pub struct GrowthRadius {
-    pub origins: Vec<(Vec3, f32)>, // (position, current_radius)
-    pub expansion_complete: bool,  // True when no more expansion is possible
+    pub origins: Vec<GrowthOriginData>,
 }
 
 #[derive(Resource, Default)]
@@ -109,7 +115,6 @@ impl Experiment for GrowthOverlayExperiment {
         .insert_resource(GameConfig::default())
         .insert_resource(GrowthRadius {
             origins: Vec::new(),
-            expansion_complete: false,
         })
         .insert_resource(GrowthState::default())
         .add_systems(OnEnter(AppState::GrowthOverlay), setup_growth_experiment)
@@ -327,13 +332,13 @@ fn spawn_growth_origin(
         let final_position = grid_aligned_point + Vec3::Y * TERRAIN_HEIGHT_OFFSET;
 
         // Register new growth origin
-        growth_radius
-            .origins
-            .push((final_position, DEFAULT_INITIAL_RADIUS));
+        growth_radius.origins.push(GrowthOriginData {
+            position: final_position,
+            current_radius: DEFAULT_INITIAL_RADIUS,
+            is_expansion_complete: false,
+        });
 
-        // Reset expansion complete flag when new origin is added
-        growth_radius.expansion_complete = false;
-        // Reset global growth state when new origin is added
+        // Only reset global growth state if the new origin can actually expand
         growth_state.is_complete = false;
 
         spawn_growth_at_position(
@@ -396,12 +401,14 @@ fn expand_growth_radius(config: Res<GameConfig>, mut growth_radius: ResMut<Growt
     // Calculate expansion for this tick
     let expansion_amount = config.radius_expansion_rate * GROWTH_UPDATE_FREQUENCY;
 
-    for (_pos, radius) in growth_radius.origins.iter_mut() {
-        if *radius < MAX_GROWTH_RADIUS {
-            *radius += expansion_amount;
-            // Cap at maximum radius
-            if *radius > MAX_GROWTH_RADIUS {
-                *radius = MAX_GROWTH_RADIUS;
+    for origin in growth_radius.origins.iter_mut() {
+        // Only expand origins that aren't complete
+        if !origin.is_expansion_complete && origin.current_radius < MAX_GROWTH_RADIUS {
+            origin.current_radius += expansion_amount;
+            // Cap at maximum radius and mark as complete if reached
+            if origin.current_radius >= MAX_GROWTH_RADIUS {
+                origin.current_radius = MAX_GROWTH_RADIUS;
+                origin.is_expansion_complete = true;
             }
         }
     }
@@ -410,16 +417,23 @@ fn expand_growth_radius(config: Res<GameConfig>, mut growth_radius: ResMut<Growt
 #[allow(clippy::too_many_arguments)]
 fn spawn_growth_in_radius(
     config: Res<GameConfig>,
-    growth_radius: Res<GrowthRadius>,
+    mut growth_radius: ResMut<GrowthRadius>,
     existing_growth: Query<&Transform, With<Growth>>,
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
     let mut spawn_data = Vec::new();
+    let mut origin_spawn_counts = vec![0usize; growth_radius.origins.len()];
 
     // For each origin, find grid positions within its current radius
-    for &(origin_pos, radius) in &growth_radius.origins {
+    for (idx, origin) in growth_radius.origins.iter().enumerate() {
+        if origin.is_expansion_complete {
+            continue; // Skip origins that are already complete
+        }
+
+        let origin_pos = origin.position;
+        let radius = origin.current_radius;
         let max_grid_distance = (radius / GRID_SIZE).floor() as i32;
 
         // Check all grid positions within radius
@@ -452,6 +466,7 @@ fn spawn_growth_in_radius(
 
                     if !occupied {
                         spawn_data.push((grid_pos, origin_pos));
+                        origin_spawn_counts[idx] += 1;
                     }
                 }
             }
@@ -470,6 +485,17 @@ fn spawn_growth_in_radius(
             &config,
         );
     }
+
+    // Mark origins as complete if they couldn't spawn any new growth
+    for (idx, &spawn_count) in origin_spawn_counts.iter().enumerate() {
+        if spawn_count == 0 && !growth_radius.origins[idx].is_expansion_complete {
+            // Check if this origin has reached a significant radius
+            // (avoid marking as complete too early)
+            if growth_radius.origins[idx].current_radius >= GRID_SIZE * 2.0 {
+                growth_radius.origins[idx].is_expansion_complete = true;
+            }
+        }
+    }
 }
 
 fn check_growth_completion(
@@ -478,11 +504,11 @@ fn check_growth_completion(
     config: Res<GameConfig>,
     mut growth_state: ResMut<GrowthState>,
 ) {
-    // Check if all origins are at max radius
-    let expansion_complete = growth_radius
+    // Check if all origins have completed expansion
+    let all_origins_complete = growth_radius
         .origins
         .iter()
-        .all(|(_, radius)| *radius >= MAX_GROWTH_RADIUS);
+        .all(|origin| origin.is_expansion_complete);
 
     // Check if all growth entities are fully mature
     let all_growth_mature = growth_q
@@ -490,7 +516,7 @@ fn check_growth_completion(
         .all(|growth| growth.age >= config.max_growth_age);
 
     // Growth is complete when both expansion and aging are done
-    if expansion_complete && all_growth_mature {
+    if all_origins_complete && all_growth_mature {
         growth_state.is_complete = true;
     }
 }
