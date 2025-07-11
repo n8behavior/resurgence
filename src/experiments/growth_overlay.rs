@@ -29,6 +29,7 @@ const DEFAULT_MIN_ALPHA: f32 = 0.2f32; // Minimum transparency for distant growt
 const DEFAULT_INITIAL_GROWTH_AGE: f32 = 0f32; // Starting age for new growth spots
 const DEFAULT_INITIAL_RADIUS: f32 = 0f32; // Starting radius for new growth origins
 const DEFAULT_MAX_GROWTH_AGE: f32 = 1f32; // Maximum age (fully mature)
+const MAX_GROWTH_RADIUS: f32 = 120f32; // Maximum radius to prevent infinite expansion
 
 // Visual constants
 const GROWTH_BASE_COLOR: (f32, f32, f32) = (1f32, 0f32, 0f32); // Red color for growth spots
@@ -80,6 +81,12 @@ impl Default for GameConfig {
 #[derive(Resource)]
 pub struct GrowthRadius {
     pub origins: Vec<(Vec3, f32)>, // (position, current_radius)
+    pub expansion_complete: bool,   // True when no more expansion is possible
+}
+
+#[derive(Resource, Default)]
+pub struct GrowthState {
+    pub is_complete: bool, // True when all growth is fully mature and expansion is done
 }
 
 pub struct GrowthOverlayExperiment;
@@ -109,16 +116,19 @@ impl Experiment for GrowthOverlayExperiment {
         .insert_resource(GameConfig::default())
         .insert_resource(GrowthRadius {
             origins: Vec::new(),
+            expansion_complete: false,
         })
+        .insert_resource(GrowthState::default())
         .add_systems(OnEnter(AppState::GrowthOverlay), setup_growth_experiment)
         .add_systems(
             Update,
             (
                 spawn_growth_origin.run_if(mouse_just_clicked),
-                age_growth,
-                update_growth_visuals,
-                expand_growth_radius,
-                spawn_growth_in_radius,
+                age_growth.run_if(growth_not_complete),
+                update_growth_visuals.run_if(growth_not_complete),
+                expand_growth_radius.run_if(growth_not_complete),
+                spawn_growth_in_radius.run_if(growth_not_complete),
+                check_growth_completion.run_if(growth_not_complete),
                 exit_experiment_on_escape,
             )
                 .run_if(in_state(AppState::GrowthOverlay)),
@@ -129,6 +139,10 @@ impl Experiment for GrowthOverlayExperiment {
 
 fn mouse_just_clicked(mouse: Res<ButtonInput<MouseButton>>) -> bool {
     mouse.just_pressed(MouseButton::Left)
+}
+
+fn growth_not_complete(growth_state: Res<GrowthState>) -> bool {
+    !growth_state.is_complete
 }
 
 fn exit_experiment_on_escape(
@@ -275,6 +289,7 @@ fn spawn_growth_origin(
     existing_growth: Query<&Transform, With<Growth>>,
     config: Res<GameConfig>,
     mut growth_radius: ResMut<GrowthRadius>,
+    mut growth_state: ResMut<GrowthState>,
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
@@ -299,6 +314,11 @@ fn spawn_growth_origin(
         growth_radius
             .origins
             .push((final_position, DEFAULT_INITIAL_RADIUS));
+        
+        // Reset expansion complete flag when new origin is added
+        growth_radius.expansion_complete = false;
+        // Reset global growth state when new origin is added
+        growth_state.is_complete = false;
 
         spawn_growth_at_position(
             final_position,
@@ -313,9 +333,14 @@ fn spawn_growth_origin(
 }
 
 fn age_growth(time: Res<Time>, config: Res<GameConfig>, mut growth_q: Query<&mut Growth>) {
+    // Only process growth entities that aren't fully mature
     for mut growth in growth_q.iter_mut() {
         if growth.age < config.max_growth_age {
             growth.age += growth.growth_rate * time.delta_secs();
+            // Clamp to max age to prevent overshooting
+            if growth.age > config.max_growth_age {
+                growth.age = config.max_growth_age;
+            }
         }
     }
 }
@@ -365,8 +390,15 @@ fn expand_growth_radius(
 
     // Calculate expansion for this tick
     let expansion_amount = config.radius_expansion_rate * GROWTH_UPDATE_FREQUENCY;
+    
     for (_pos, radius) in growth_radius.origins.iter_mut() {
-        *radius += expansion_amount;
+        if *radius < MAX_GROWTH_RADIUS {
+            *radius += expansion_amount;
+            // Cap at maximum radius
+            if *radius > MAX_GROWTH_RADIUS {
+                *radius = MAX_GROWTH_RADIUS;
+            }
+        }
     }
 }
 
@@ -402,6 +434,12 @@ fn spawn_growth_in_radius(
                     origin_pos.z + (z as f32) * GRID_SIZE,
                 );
 
+                // Check if position is within terrain bounds
+                let terrain_half_size = TERRAIN_SIZE / 2.0;
+                if grid_pos.x.abs() > terrain_half_size || grid_pos.z.abs() > terrain_half_size {
+                    continue; // Skip positions outside terrain
+                }
+
                 let distance_from_origin = grid_pos.distance(origin_pos);
 
                 // Only spawn if within radius and not too close to origin
@@ -434,5 +472,25 @@ fn spawn_growth_in_radius(
             &existing_growth,
             &config,
         );
+    }
+}
+
+fn check_growth_completion(
+    growth_radius: Res<GrowthRadius>,
+    growth_q: Query<&Growth>,
+    config: Res<GameConfig>,
+    mut growth_state: ResMut<GrowthState>,
+) {
+    // Check if all origins are at max radius
+    let expansion_complete = growth_radius.origins.iter()
+        .all(|(_, radius)| *radius >= MAX_GROWTH_RADIUS);
+    
+    // Check if all growth entities are fully mature
+    let all_growth_mature = growth_q.iter()
+        .all(|growth| growth.age >= config.max_growth_age);
+    
+    // Growth is complete when both expansion and aging are done
+    if expansion_complete && all_growth_mature {
+        growth_state.is_complete = true;
     }
 }
