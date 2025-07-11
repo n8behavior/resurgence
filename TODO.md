@@ -13,6 +13,15 @@
 
 ## Features
 
+- [ ] Comprehensive tracing for all systems to allow insight and debugging
+- [ ] Improve growth monitoring.
+  - why do we reset growth state when a new origin is added?
+  - MAX_GROWTH_RADIUS is the best way to detect growth complete. I think we
+    could determine if there is any free space left each origin can expand into.
+    We have to check this anyway as we spawn new growth. I think that system
+    could flag each origin as fully grown.
+  - Also growth has two components, expanding and maturing.
+
 - [ ] Add experiment descriptions to launcher UI
 - [ ] Implement [strike radius targeting UI](experiments.md#strike-radius-targeting-ui)
 - [ ] Add README screenshots of experiments
