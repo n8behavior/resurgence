@@ -22,9 +22,9 @@ const DIRECTIONAL_LIGHT_POS: (f32, f32, f32) = (0f32, 10f32, 0f32);
 const GROWTH_UPDATE_FREQUENCY: f32 = 0.2f32; // 5Hz
 
 // Game balance constants
-const DEFAULT_GROWTH_RATE: f32 = 0.05f32; // How fast spots mature (0-1 per second)
-const DEFAULT_RADIUS_EXPANSION_RATE: f32 = 0.2f32; // How fast growth spreads (units per second)
-const DEFAULT_MAX_GROWTH_DISTANCE: f32 = 20f32; // Distance for alpha fade effect
+const DEFAULT_GROWTH_RATE: f32 = 5f32; // How fast spots mature (0-1 per second)
+const DEFAULT_RADIUS_EXPANSION_RATE: f32 = 10f32; // How fast growth spreads (units per second)
+const DEFAULT_MAX_GROWTH_DISTANCE: f32 = 40f32; // Distance for alpha fade effect
 const DEFAULT_MIN_ALPHA: f32 = 0.2f32; // Minimum transparency for distant growth
 const DEFAULT_INITIAL_GROWTH_AGE: f32 = 0f32; // Starting age for new growth spots
 const DEFAULT_INITIAL_RADIUS: f32 = 0f32; // Starting radius for new growth origins
@@ -78,7 +78,7 @@ impl Default for GameConfig {
 #[derive(Resource)]
 pub struct GrowthRadius {
     pub origins: Vec<(Vec3, f32)>, // (position, current_radius)
-    pub expansion_complete: bool,   // True when no more expansion is possible
+    pub expansion_complete: bool,  // True when no more expansion is possible
 }
 
 #[derive(Resource, Default)]
@@ -118,7 +118,6 @@ impl Experiment for GrowthOverlayExperiment {
             (
                 // Timer system runs every frame to track time (runs first)
                 tick_growth_timer.run_if(growth_not_complete),
-                
                 // Systems that need 60fps responsiveness
                 spawn_growth_origin.run_if(mouse_just_clicked),
                 exit_experiment_on_escape,
@@ -135,7 +134,12 @@ impl Experiment for GrowthOverlayExperiment {
                 expand_growth_radius,
                 spawn_growth_in_radius,
                 check_growth_completion,
-            ).run_if(in_state(AppState::GrowthOverlay).and(growth_not_complete).and(growth_timer_just_finished)),
+            )
+                .run_if(
+                    in_state(AppState::GrowthOverlay)
+                        .and(growth_not_complete)
+                        .and(growth_timer_just_finished),
+                ),
         )
         .add_systems(OnExit(AppState::GrowthOverlay), cleanup_growth_experiment)
     }
@@ -326,7 +330,7 @@ fn spawn_growth_origin(
         growth_radius
             .origins
             .push((final_position, DEFAULT_INITIAL_RADIUS));
-        
+
         // Reset expansion complete flag when new origin is added
         growth_radius.expansion_complete = false;
         // Reset global growth state when new origin is added
@@ -366,13 +370,13 @@ fn update_growth_visuals(
             // Interpolate from red (new) to black (mature)
             // Red -> Brown -> Dark Brown -> Black
             let age_normalized = (growth.age / GROWTH_VISUAL_AGE_THRESHOLD).clamp(0.0, 1.0);
-            
+
             let (r, g, b) = if age_normalized < 0.5 {
                 // First half: Red (1,0,0) -> Brown (0.6,0.3,0.1)
                 let t = age_normalized * 2.0; // 0.0 to 1.0
                 let r = 1.0 - t * 0.4; // 1.0 -> 0.6
-                let g = t * 0.3;       // 0.0 -> 0.3
-                let b = t * 0.1;       // 0.0 -> 0.1
+                let g = t * 0.3; // 0.0 -> 0.3
+                let b = t * 0.1; // 0.0 -> 0.1
                 (r, g, b)
             } else {
                 // Second half: Brown (0.6,0.3,0.1) -> Black (0,0,0)
@@ -382,19 +386,16 @@ fn update_growth_visuals(
                 let b = 0.1 - t * 0.1; // 0.1 -> 0.0
                 (r, g, b)
             };
-            
+
             material.base_color = Color::srgb(r, g, b);
         }
     }
 }
 
-fn expand_growth_radius(
-    config: Res<GameConfig>,
-    mut growth_radius: ResMut<GrowthRadius>,
-) {
+fn expand_growth_radius(config: Res<GameConfig>, mut growth_radius: ResMut<GrowthRadius>) {
     // Calculate expansion for this tick
     let expansion_amount = config.radius_expansion_rate * GROWTH_UPDATE_FREQUENCY;
-    
+
     for (_pos, radius) in growth_radius.origins.iter_mut() {
         if *radius < MAX_GROWTH_RADIUS {
             *radius += expansion_amount;
@@ -478,13 +479,16 @@ fn check_growth_completion(
     mut growth_state: ResMut<GrowthState>,
 ) {
     // Check if all origins are at max radius
-    let expansion_complete = growth_radius.origins.iter()
+    let expansion_complete = growth_radius
+        .origins
+        .iter()
         .all(|(_, radius)| *radius >= MAX_GROWTH_RADIUS);
-    
+
     // Check if all growth entities are fully mature
-    let all_growth_mature = growth_q.iter()
+    let all_growth_mature = growth_q
+        .iter()
         .all(|growth| growth.age >= config.max_growth_age);
-    
+
     // Growth is complete when both expansion and aging are done
     if expansion_complete && all_growth_mature {
         growth_state.is_complete = true;
