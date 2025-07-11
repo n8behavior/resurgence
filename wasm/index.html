@@ -1,17 +1,136 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Resurgence - Post-Apocalyptic Earth Reclamation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #1a1a1a;
+            font-family: Arial, sans-serif;
+            color: white;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
 
-<body style="margin: 0px;">
-  <script type="module">
-    import './restart-audio-context.js'
-    import init from './bevy_game.js'
+        .loading {
+            text-align: center;
+            margin-bottom: 20px;
+        }
 
-    init().catch((error) => {
-      if (!error.message.startsWith("Using exceptions for control flow, don't mind me. This isn't actually an error!")) {
-        throw error;
-      }
-    });
-  </script>
+        .loading h1 {
+            color: #ccddff;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .loading p {
+            color: #aaa;
+            margin: 5px 0;
+            font-size: 1.2em;
+        }
+
+        canvas {
+            display: block;
+            background: #111;
+            border: 1px solid #333;
+            max-width: 100vw;
+            max-height: 100vh;
+        }
+
+        #loading-text {
+            margin-top: 20px;
+            color: #888;
+            font-size: 14px;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .controls {
+            margin-top: 15px;
+            font-size: 12px;
+            color: #666;
+            text-align: center;
+            max-width: 600px;
+            padding: 10px;
+        }
+
+        .error {
+            color: #ff6666;
+            background: #331111;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px;
+            border: 1px solid #663333;
+        }
+    </style>
+</head>
+<body>
+    <div id="loading" class="loading">
+        <h1>🌱 Resurgence Experiments</h1>
+        <p>Post-Apocalyptic Earth Reclamation</p>
+        <p id="loading-text">Loading launcher...</p>
+    </div>
+
+    <canvas id="bevy-canvas" class="hidden"></canvas>
+
+    <div id="controls" class="controls hidden">
+        <strong>Controls:</strong><br>
+        • Use the launcher interface to select experiments<br>
+        • Left-click in Growth Overlay to place origins<br>
+        • Press ESC to return to the launcher
+    </div>
+
+    <script type="module">
+        import './restart-audio-context.js';
+        import init from './resurgence.js';
+
+        async function run() {
+            try {
+                document.getElementById('loading-text').textContent = 'Initializing WASM...';
+                
+                await init();
+                
+                document.getElementById('loading-text').textContent = 'Starting launcher...';
+                
+                // Small delay to let Bevy initialize
+                setTimeout(() => {
+                    // Hide loading, show canvas and controls
+                    document.getElementById('loading').classList.add('hidden');
+                    document.getElementById('bevy-canvas').classList.remove('hidden');
+                    document.getElementById('controls').classList.remove('hidden');
+                }, 1000);
+                
+            } catch (error) {
+                // Show error message
+                const loadingDiv = document.getElementById('loading');
+                loadingDiv.innerHTML = `
+                    <div class="error">
+                        <h2>Failed to Load</h2>
+                        <p>Error: ${error.message}</p>
+                        <p>Please refresh the page to try again.</p>
+                    </div>
+                `;
+                console.error('Error loading WASM:', error);
+            }
+        }
+
+        // Handle errors gracefully
+        window.addEventListener('error', (event) => {
+            if (!event.message.includes("Using exceptions for control flow")) {
+                console.error('Runtime error:', event.error);
+            }
+        });
+
+        run();
+    </script>
 </body>
-
 </html>
