@@ -1,9 +1,9 @@
-pub mod growth_overlay;
+pub mod crimson_sprawl;
 pub mod terrain_proc_gen;
 
 use bevy::prelude::*;
 
-use self::{growth_overlay::GrowthOverlayExperiment, terrain_proc_gen::TerrainProcGenExperiment};
+use self::{crimson_sprawl::CrimsonSprawlExperiment, terrain_proc_gen::TerrainProcGenExperiment};
 
 /// Trait for experiment modules
 pub trait Experiment {
@@ -25,14 +25,14 @@ pub trait Experiment {
 pub enum AppState {
     #[default]
     Launcher,
-    GrowthOverlay,
+    CrimsonSprawl,
     TerrainProcGen,
 }
 
 /// Registry of all available experiments
 pub fn all_experiments() -> Vec<Box<dyn Experiment>> {
     vec![
-        Box::new(GrowthOverlayExperiment),
+        Box::new(CrimsonSprawlExperiment),
         Box::new(TerrainProcGenExperiment),
         // Add new experiments here
     ]

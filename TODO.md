@@ -6,22 +6,21 @@
 
 - [x] growth only goes from light red to red. It should continue through browns
       and all the way to black
-- [ ] CPU usage continues to climb even after growth fully consumes the
+- [x] CPU usage continues to climb even after growth fully consumes the
       terrain. I suspect we need to check the terrain bounds.
 - [ ] growth colors look a bit faded, especially black. It only go to charcoal.
       need to grow to full black for now.
 
 ## Features
 
-- [ ] Comprehensive tracing for all systems to allow insight and debugging
-- [ ] Improve growth monitoring.
+- [ ] Improve growth system.
   - why do we reset growth state when a new origin is added?
   - MAX_GROWTH_RADIUS is the best way to detect growth complete. I think we
     could determine if there is any free space left each origin can expand into.
     We have to check this anyway as we spawn new growth. I think that system
     could flag each origin as fully grown.
   - Also growth has two components, expanding and maturing.
-
+- [ ] Comprehensive tracing for all systems to allow insight and debugging
 - [ ] Add experiment descriptions to launcher UI
 - [ ] Implement [strike radius targeting UI](experiments.md#strike-radius-targeting-ui)
 - [ ] Add README screenshots of experiments
