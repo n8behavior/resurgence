@@ -24,6 +24,9 @@ scenario.
 
 # Releasing:
 # - Do native and WASM builds as a smoke test
+# - For WASM: After building, copy assets with: cp -r assets wasm/
+# - Ask user to test WASM locally with: simple-http-server wasm/
+# - Ask user to test native locally with: cargo run
 # - Bump version in Cargo.toml
 # - commit and tags with new version
 # - Do NOT push code or tags, let the user do that
@@ -49,6 +52,7 @@ gh workflow view Release   # Check release status
 # WASM build commands
 cargo build --release --target wasm32-unknown-unknown
 wasm-bindgen --no-typescript --out-name resurgence --out-dir wasm --target web target/wasm32-unknown-unknown/release/resurgence.wasm
+cp -r assets wasm/  # Copy assets for web serving
 # Do NOT start the server, let the user do that
 ```
 

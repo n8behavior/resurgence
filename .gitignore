@@ -7,3 +7,6 @@ wasm/*.d.ts
 
 # Exception: Keep manually created files
 !wasm/restart-audio-context.js
+
+# Exclude copied assets in wasm directory
+wasm/assets/
