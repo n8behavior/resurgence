@@ -86,7 +86,7 @@ impl Experiment for CrimsonSprawlExperiment {
     }
 
     fn icon(&self) -> &'static str {
-        "🩸"
+        "\u{e22f}" // Font Awesome lightning bolt icon
     }
 
     fn app_state(&self) -> AppState {

@@ -40,7 +40,7 @@ impl Experiment for TerrainProcGenExperiment {
     }
 
     fn icon(&self) -> &'static str {
-        "⛰️"
+        "\u{e2a6}" // Font Awesome mountain icon
     }
 
     fn app_state(&self) -> AppState {

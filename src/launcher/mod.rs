@@ -31,7 +31,9 @@ impl Plugin for LauncherPlugin {
     }
 }
 
-fn setup_launcher(mut commands: Commands) {
+fn setup_launcher(mut commands: Commands, asset_server: Res<AssetServer>) {
+    // Load Nerd Font for icons
+    let icon_font = asset_server.load("fonts/UbuntuMonoNerdFont-Regular.ttf");
     // Camera for UI
     commands.spawn(Camera2d);
 
@@ -102,6 +104,7 @@ fn setup_launcher(mut commands: Commands) {
                         parent.spawn((
                             Text::new(format!("{} {}", experiment.icon(), experiment.name())),
                             TextFont {
+                                font: icon_font.clone(),
                                 font_size: 24.0,
                                 ..default()
                             },

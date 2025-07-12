@@ -22,7 +22,10 @@
       "Bash(markdownlint-cli2:*)",
       "Bash(mv:*)",
       "Bash(cargo:*)",
-      "Bash(wasm-bindgen:*)"
+      "Bash(wasm-bindgen:*)",
+      "Bash(git tag:*)",
+      "Bash(mkdir:*)",
+      "Bash(fc-list:*)"
     ],
     "deny": []
   }
