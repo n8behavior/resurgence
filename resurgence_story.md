@@ -117,6 +117,50 @@ to orbit, we might unlock a path forward. But we'll need more advanced
 harvesting tech—and time—to exploit the deeper layers of what the Growth has
 become.
 
+### Growth Taxonomy
+
+As humanity studies the Growth, a classification system emerges:
+
+**Colony** - A single Growth organism spreading from one origin point. Each
+colony is a distinct entity with its own heart (the origin) and body (the
+spreading patches). Destroying a colony's origin kills the entire organism.
+
+**Strain** - A distinct species or variant of Growth, each with unique
+spreading patterns and behaviors. Scientists catalog them with clinical
+designations like "Xenophyta-1," but soldiers in the field have given them names
+that capture their horror:
+
+- **Crimson Sprawl**: The most common strain, spreading outward like spilled
+  blood across the land. Its red patches grow darker as they mature, eventually
+  turning the earth black.
+- **Tide Walker**: Named for how it flows across terrain like an incoming tide,
+  following waterways and pooling in low ground. It seems to sense moisture.
+- **Void Burrower**: Creates vast underground networks, surfacing without
+  warning. Soldiers report hearing it moving beneath their feet in the dark.
+- **Locust Bloom**: Manifests as multiple fast-moving clusters that coordinate
+  their attacks, stripping areas bare before moving on like a plague of locusts.
+- **Ghost Weed**: The most unsettling strain, phasing in and out of visibility.
+  One moment the ground is clear, the next it's covered in pale, translucent growth.
+
+**Origin** - The heart of a colony, where it first took root. Origins can be
+targeted and destroyed to eliminate entire colonies. Some origins show signs of
+intelligence, actively defending themselves or relocating when threatened.
+
+**Patch** - Individual growth manifestations that make up a colony's body.
+Patches mature over time, changing from bright red (new growth) through brown
+to black (fully mature). Mature patches are harder to destroy and produce more
+toxins.
+
+**Spreading** - The expansion pattern unique to each strain. Understanding
+spreading patterns is crucial for containment and counter-strategies.
+
+**Maturation** - The aging process of patches. Mature growth is more dangerous
+but also yields more valuable resources when harvested.
+
+Each new strain discovered reveals the Growth's terrifying adaptability. What
+started as simple radial expansion has evolved into complex, strategic
+patterns. The Growth isn't just consuming Earth—it's learning.
+
 But there may be more than just toxic biomass underfoot.
 
 As scouts and harvesters expand operations, strange anomalies begin to appear
