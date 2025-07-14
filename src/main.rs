@@ -15,7 +15,7 @@ fn main() {
 
     // Add all experiment systems from registry
     for experiment in all_experiments() {
-        experiment.add_systems(&mut app);
+        experiment.app_setup(&mut app);
     }
 
     app.run();

@@ -15,17 +15,26 @@ feasibility.
 
 ### Latest Code (For developers/bleeding edge)
 
-1. **Launch locally**: Run `cargo run` to start the experiment launcher
-2. **Select an experiment**: Click on any experiment button in the launcher UI
-3. **Test the mechanics**: Follow the specific instructions for each experiment below
-4. **Return to launcher**: Press `ESC` at any time to return to the main menu
-5. **Test local WASM build**: Use
+The latest ideas are being developed as a series of Experiments run from the
+launcher. You can run the launcher as native code or WASM.
 
-   ```bash
-   cargo build --release --target wasm32-unknown-unknown
-   wasm-bindgen --out-dir wasm --target web target/wasm32-unknown-unknown/release/resurgence.wasm
-   simple-http-server wasm/
-   ```
+1. **Select an experiment**: Click on any experiment button in the launcher UI
+1. **Test the mechanics**: Follow the specific instructions for each experiment below
+1. **Return to launcher**: Press `ESC` at any time to return to the main menu
+
+#### Native
+
+```bash
+cargo run --release
+```
+
+#### WASM
+
+```bash
+cargo run --release --target wasm32-unknown-unknown
+```
+
+_Note: You need to `cargo install wasm-server-runner`, if already installed_
 
 ## Approach
 
@@ -33,6 +42,20 @@ feasibility.
 2. Gather quick metrics or feedback from testers
 3. Iterate or pivot based on what we learn
 4. Layer these mechanics together in a composite prototype
+
+---
+
+## Implementing Experiments
+
+To create a new experiment, choose one from the [experiments
+list](./experiments.md) and follow these basic steps:
+
+1. Create a new module, e.g. `./src/experiments/some_experiment.rs` and add it
+   to `./src/experiments/mod.rs`
+1. In **some_experiment.rs**, create a `struct` for the experiment and `impl
+Experiment for SomeExperiment`
+1. In **mod.rs**, add an `AppState` variant, e.g. `SomeExperiment`
+1. In **mod.rs**, register your experiment in `all_experiments()`
 
 ---
 
@@ -54,7 +77,7 @@ feasibility.
 
 ---
 
-### Growth-Type Overlay Demo ✅
+### Crimson Sprawl (original attempt) ✅
 
 - **Access:** Launch game → Click "Growth-Type Overlay Demo"
 - **Controls:**
@@ -91,73 +114,3 @@ feasibility.
 - **Why:** See if combat feels responsive, whether AI is challenging but not
   overwhelming, and how resource hits/registers look.
 - **Metric:** Average fight duration and player hit-rate vs agent hit-rate.
-
----
-
-## Resource Collection & Conversion
-
-- **What:** Scatter "resource nodes" (rocks, growth pods) that can be clicked
-  or collided with to harvest. Add a simple UI counter/inventory and a
-  conversion step ("pod → material").
-- **Why:** Test whether the collection loop (find → collect → convert) is
-  satisfying or too grindy.
-- **Metric:** Number of clicks or key-presses per unit resource, and time to
-  process 100 units.
-
----
-
-## Panel-Storyboard Generator
-
-- **What:** Create a mock "timeline" UI where you feed it a sequence of
-  in-game events (e.g., first encounter, harvest, defeat) and it spits out
-  placeholders for graphic panels.
-- **Why:** Prototype how players pick moments for their "graphic novel"
-  review. Validate UX: is picking and re-rolling intuitive?
-- **Metric:** Successful panel selection rate and user satisfaction in a quick
-  hallway test.
-
----
-
-## Projectile Arc & Impact Markers
-
-- **What:** Implement a ballistic projectile (gravity + drag) that the player
-  can lo-click and drag to aim, showing a dotted trajectory and landing
-  marker.
-- **Why:** See if the physics-based aiming feels natural, and whether the arc
-  visualization gives players the right feedback.
-- **Metric:** Accuracy of first-shot landings vs target, and user ability to
-  adjust arc mid-test.
-
----
-
-## Rugged Terrain Pathfinding
-
-- **What:** Take your terrain slice and overlay a simple grid graph. Run A\*
-  to find a path between two points, penalizing steep slopes. Visualize the
-  path.
-- **Why:** Determine whether automated navigation (or enemy AI) can handle
-  your map complexity, and how steepness weighting needs tuning.
-- **Metric:** Path length vs optimal straight-line, and failure rate on
-  extreme maps.
-
----
-
-## Interactive Material Inspection
-
-- **What:** Spawn a "discovered material" node that, when clicked, brings up
-  a 3D inspect panel showing stats/description.
-- **Why:** Prototype your inspection UI flow—does it break immersion? Is the
-  info panel clear and actionable?
-- **Metric:** Time to find a material, inspect it, and return to play,
-  measured in seconds.
-
----
-
-## HUD & Input Mapping
-
-- **What:** Build a minimal UI overlay showing health, resource count, and
-  current tool. Implement keyboard/mouse binding menus and live remapping.
-- **Why:** Verify that your core HUD layout doesn't obscure the world and
-  that input customization works before you build more features.
-- **Metric:** Percentage of first-time testers who can remap keys and read
-  their status without a manual.

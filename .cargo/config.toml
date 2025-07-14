@@ -4,3 +4,7 @@ linker = "clang"
 
 # Tell clang to use lld rather than its default ld
 rustflags = ["-C", "link-arg=-fuse-ld=lld"]
+
+
+[target.wasm32-unknown-unknown]
+runner = "wasm-server-runner"

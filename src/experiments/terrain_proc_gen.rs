@@ -47,7 +47,7 @@ impl Experiment for TerrainProcGenExperiment {
         AppState::TerrainProcGen
     }
 
-    fn add_systems<'a>(&self, app: &'a mut App) -> &'a mut App {
+    fn app_setup<'a>(&self, app: &'a mut App) -> &'a mut App {
         app.add_plugins(WireframePlugin::default())
             .insert_resource(WireframeConfig {
                 global: false, // only draw wireframes where you add `Wireframe`
@@ -58,24 +58,10 @@ impl Experiment for TerrainProcGenExperiment {
             .add_systems(OnEnter(AppState::TerrainProcGen), setup_terrain_experiment)
             .add_systems(
                 Update,
-                (
-                    toggle_wireframe,
-                    control_ship,
-                    control_ship_camera,
-                    exit_experiment_on_escape,
-                )
+                (toggle_wireframe, control_ship, control_ship_camera)
                     .run_if(in_state(AppState::TerrainProcGen)),
             )
             .add_systems(OnExit(AppState::TerrainProcGen), cleanup_terrain_experiment)
-    }
-}
-
-fn exit_experiment_on_escape(
-    keyboard: Res<ButtonInput<KeyCode>>,
-    mut next_state: ResMut<NextState<AppState>>,
-) {
-    if keyboard.just_pressed(KeyCode::Escape) {
-        next_state.set(AppState::Launcher);
     }
 }
 

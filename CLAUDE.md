@@ -63,3 +63,4 @@ cp -r assets wasm/  # Copy assets for web serving
 - **ECS Architecture**: Uses Bevy's Entity Component System pattern
 - **Main Entry**: `src/main.rs` - Launcher system for accessing experiments
 - **Experiments**: `src/experiments/` contains integrated experiment modules
+  that focus on a single concept about the game

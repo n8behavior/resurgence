@@ -25,7 +25,9 @@
       "Bash(wasm-bindgen:*)",
       "Bash(git tag:*)",
       "Bash(mkdir:*)",
-      "Bash(fc-list:*)"
+      "Bash(fc-list:*)",
+      "Bash(test:*)",
+      "Bash(cat:*)"
     ],
     "deny": []
   }

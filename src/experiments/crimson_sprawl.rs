@@ -82,18 +82,18 @@ pub struct CrimsonSprawlExperiment;
 
 impl Experiment for CrimsonSprawlExperiment {
     fn name(&self) -> &'static str {
-        "Crimson Sprawl Strain"
+        "Crimson Sprawl (original attempt)"
     }
 
     fn icon(&self) -> &'static str {
-        "\u{e22f}" // Font Awesome lightning bolt icon
+        "\u{e22f}"
     }
 
     fn app_state(&self) -> AppState {
         AppState::CrimsonSprawl
     }
 
-    fn add_systems<'a>(&self, app: &'a mut App) -> &'a mut App {
+    fn app_setup<'a>(&self, app: &'a mut App) -> &'a mut App {
         app.insert_resource(GrowthUpdateTimer(Timer::from_seconds(
             GROWTH_UPDATE_FREQUENCY,
             TimerMode::Repeating,
@@ -107,7 +107,6 @@ impl Experiment for CrimsonSprawlExperiment {
                 tick_growth_timer.run_if(growth_not_complete),
                 // Systems that need 60fps responsiveness
                 spawn_crimson_colony.run_if(mouse_just_clicked),
-                exit_experiment_on_escape,
             )
                 .run_if(in_state(AppState::CrimsonSprawl)),
         )
@@ -146,15 +145,6 @@ fn growth_timer_just_finished(timer: Res<GrowthUpdateTimer>) -> bool {
 
 fn tick_growth_timer(mut timer: ResMut<GrowthUpdateTimer>, time: Res<Time>) {
     timer.0.tick(time.delta());
-}
-
-fn exit_experiment_on_escape(
-    keyboard: Res<ButtonInput<KeyCode>>,
-    mut next_state: ResMut<NextState<AppState>>,
-) {
-    if keyboard.just_pressed(KeyCode::Escape) {
-        next_state.set(AppState::Launcher);
-    }
 }
 
 fn snap_to_grid(position: Vec3) -> Vec3 {

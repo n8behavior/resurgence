@@ -24,6 +24,10 @@ impl Plugin for LauncherPlugin {
         app.add_systems(OnEnter(AppState::Launcher), setup_launcher)
             .add_systems(
                 Update,
+                exit_experiment_on_escape.run_if(not(in_state(AppState::Launcher))),
+            )
+            .add_systems(
+                Update,
                 (handle_button_interactions, update_button_colors)
                     .run_if(in_state(AppState::Launcher)),
             )
@@ -150,6 +154,15 @@ fn update_button_colors(
             Interaction::Hovered => BUTTON_HOVER_COLOR.into(),
             Interaction::None => BUTTON_COLOR.into(),
         };
+    }
+}
+
+fn exit_experiment_on_escape(
+    keyboard: Res<ButtonInput<KeyCode>>,
+    mut next_state: ResMut<NextState<AppState>>,
+) {
+    if keyboard.just_pressed(KeyCode::Escape) {
+        next_state.set(AppState::Launcher);
     }
 }
 
